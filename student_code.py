@@ -194,20 +194,17 @@ class InferenceEngine(object):
         # Student code goes here
         # infer a fact/ a rule
         # bind LHS[0] and fact
-        binding_list = ListOfBindings()
+        bindings = match(fact.statement, rule.lhs[0])
         rule_lhs = []
-        for l in rule.lhs:
-            bindings = match(fact.statement, l)
-            if bindings:
-                binding_list.add_bindings(bindings, [fact])
-            else:
+        for i, l in enumerate(rule.lhs):
+            if i > 0:
                 rule_lhs.append(l)
         # instantiate a new statement
-        if binding_list.list_of_bindings:
+        if bindings:
             if len(rule_lhs) is 0:
                 support_by = [[fact, rule]]
                 # use the first binding , create a new fact
-                new_f = Fact(instantiate(rule.rhs, binding_list[0]), support_by)
+                new_f = Fact(instantiate(rule.rhs, bindings), support_by)
                 kb.kb_add(new_f)
                 ind = kb.facts.index(new_f)
                 fact.supports_facts.append(kb.facts[ind])
@@ -217,9 +214,9 @@ class InferenceEngine(object):
                 support_by = [[fact, rule]]
                 # use the first binding , create a new list of lhs
                 for rl in rule_lhs:
-                    rule_lhs_statement.append(instantiate(rl, binding_list[0]))
+                    rule_lhs_statement.append(instantiate(rl, bindings))
                 # create a new rhs
-                new_rule_rhs = instantiate(rule.rhs, binding_list[0])
+                new_rule_rhs = instantiate(rule.rhs, bindings)
                 # create a new rule using lhs and rhs
                 new_r = Rule([rule_lhs_statement, new_rule_rhs], support_by)
                 kb.kb_add(new_r)
