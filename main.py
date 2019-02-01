@@ -14,7 +14,7 @@ class KBTest(unittest.TestCase):
         for item in data:
             if isinstance(item, Fact) or isinstance(item, Rule):
                 self.KB.kb_assert(item)
-        
+
     def test1(self):
         # Did the student code contain syntax errors, AttributeError, etc.
         ask1 = read.parse_input("fact: (motherof ada ?X)")
@@ -35,6 +35,12 @@ class KBTest(unittest.TestCase):
         r1 = read.parse_input("fact: (motherof ada bing)")
         print(' Retracting', r1)
         self.KB.kb_retract(r1)
+
+        ask0 = read.parse_input("fact: (parentof ada ?X)")
+        print(' Asking if', ask0)
+        answer = self.KB.kb_ask(ask0)
+        self.assertEqual(len(answer), 0)
+
         ask1 = read.parse_input("fact: (grandmotherof ada ?X)")
         print(' Asking if', ask1)
         answer = self.KB.kb_ask(ask1)
@@ -77,21 +83,6 @@ class KBTest(unittest.TestCase):
         print(' Asking if', ask)
         answer = self.KB.kb_ask(ask)
         self.assertEqual(str(answer[0]), "?X : bing")
-
-    def test7(self):
-        # makes sure retract does not retract supported fact
-        ask1 = read.parse_input("fact: (auntof eva ?X)")
-        print(' Asking if', ask1)
-        answer = self.KB.kb_ask(ask1)
-        self.assertEqual(str(answer[0]), "?X : bing")
-
-        r1 = read.parse_input("fact: (motherof ada bing)")
-        print(' Retracting', r1)
-        self.KB.kb_retract(r1)
-
-        print(' Asking if', ask1)
-        answer = self.KB.kb_ask(ask1)
-        self.assertEqual(len(answer), 0)
 
 
 def pprint_justification(answer):

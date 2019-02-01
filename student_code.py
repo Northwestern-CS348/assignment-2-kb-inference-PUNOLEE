@@ -130,34 +130,31 @@ class KnowledgeBase(object):
         # Student code goes here
         # if it is a fact
         if isinstance(fact_or_rule, Fact):
-            if not fact_or_rule in self.facts:
+            if fact_or_rule not in self.facts:
                 return
             f = self._get_fact(fact_or_rule)
             if f.supported_by == []:
-
+                self.facts.remove(f)
                 for sf in f.supports_facts:
+                    # handle sf's supported_by
                     for pair in sf.supported_by:
                         if pair[0] == f:
                             sf.supported_by.remove(pair)
-                            r = pair[1]
-                            for pp in sf.supported_by:
-                                if pp[1] == r:
-                                    sf.supported_by.remove(pp)
+                    # retract sf
                     self.kb_retract(sf)
                 for sr in f.supports_rules:
+                    # handle sr's supported_by
                     for pair in sr.supported_by:
                         if pair[0] == f:
                             sr.supported_by.remove(pair)
-                            r = pair[1]
-                            for pp in sr.supported_by:
-                                if pp[1] == r:
-                                    sr.supported_by.remove(pp)
+                    # retract sf
                     self.kb_retract(sr)
-                self.facts.remove(f)
 
         # if it is a rule
         else:
             # if it is an inferred rule
+            if fact_or_rule not in self.rules:
+                return
             r = self._get_rule(fact_or_rule)
             if r.asserted is False:
                 if r.supported_by == []:
@@ -165,21 +162,13 @@ class KnowledgeBase(object):
                         for pair in sf.supported_by:
                             if pair[1] == r:
                                 sf.supported_by.remove(pair)
-                                f = pair[0]
-                                for pp in sf.supported_by:
-                                    if pp[0] == f:
-                                        sf.supported_by.remove(pp)
                         self.kb_retract(sf)
                     for sr in r.supports_rules:
                         for pair in sr.supported_by:
                             if pair[1] == r:
                                 sr.supported_by.remove(pair)
-                                f = pair[0]
-                                for pp in sr.supported_by:
-                                    if pp[0] == f:
-                                        sr.supported_by.remove(pp)
                         self.kb_retract(sr)
-                    self.rules.remove(r)
+                self.rules.remove(r)
 
 
 
@@ -200,33 +189,33 @@ class InferenceEngine(object):
         ####################################################
         # Student code goes here
         # infer a fact/ a rule
-        # bind LHS and fact
+        # bind LHS[0] and fact
         binding_list = ListOfBindings()
         rule_lhs = []
         for l in rule.lhs:
-            bindings = match(l, fact.statement)
+            bindings = match(fact.statement, l)
             if bindings:
                 binding_list.add_bindings(bindings, [fact])
             else:
                 rule_lhs.append(l)
         # instantiate a new statement
         if binding_list.list_of_bindings:
-            for binding in binding_list:
-                if len(rule_lhs) is 0:
-                    support_by = [[fact, rule]]
-                    new_f = Fact(instantiate(rule.rhs, binding), support_by)
-                    fact.supports_facts.append(new_f)
-                    rule.supports_facts.append(new_f)
-                    if new_f not in kb.facts:
-                        kb.kb_add(new_f)
-                else:
-                    rule_lhs_statement = []
-                    support_by = [[fact, rule]]
-                    for rl in rule_lhs:
-                        rule_lhs_statement.append(instantiate(rl, binding))
-                    new_rule_rhs = instantiate(rule.rhs, binding)
-                    new_r = Rule([rule_lhs_statement, new_rule_rhs], support_by)
-                    fact.supports_rules.append(new_r)
-                    rule.supports_rules.append(new_r)
-                    if new_r not in kb.rules:
-                        kb.kb_add(new_r)
+            if len(rule_lhs) is 0:
+                support_by = [[fact, rule]]
+                new_f = Fact(instantiate(rule.rhs, binding_list[0]), support_by)
+                kb.kb_add(new_f)
+                ind = kb.facts.index(new_f)
+                fact.supports_facts.append(kb.facts[ind])
+                rule.supports_facts.append(kb.facts[ind])
+            else:
+                rule_lhs_statement = []
+                support_by = [[fact, rule]]
+                for rl in rule_lhs:
+                    rule_lhs_statement.append(instantiate(rl, binding_list[0]))
+                new_rule_rhs = instantiate(rule.rhs, binding_list[0])
+                new_r = Rule([rule_lhs_statement, new_rule_rhs], support_by)
+                kb.kb_add(new_r)
+                ind = kb.rules.index(new_r)
+                fact.supports_rules.append(kb.rules[ind])
+                rule.supports_rules.append(kb.rules[ind])
+
