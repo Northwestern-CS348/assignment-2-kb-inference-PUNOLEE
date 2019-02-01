@@ -134,7 +134,7 @@ class KnowledgeBase(object):
                 return
             f = self._get_fact(fact_or_rule)
             if f.supported_by == []:
-                self.facts.remove(f)
+
                 for sf in f.supports_facts:
                     # handle sf's supported_by
                     for pair in sf.supported_by:
@@ -149,7 +149,8 @@ class KnowledgeBase(object):
                             sr.supported_by.remove(pair)
                     # retract sf
                     self.kb_retract(sr)
-
+                # remove f in kb
+                self.facts.remove(f)
         # if it is a rule
         else:
             # if it is an inferred rule
@@ -159,18 +160,21 @@ class KnowledgeBase(object):
             if r.asserted is False:
                 if r.supported_by == []:
                     for sf in r.supports_facts:
+                        # handle sf's supported_by
                         for pair in sf.supported_by:
                             if pair[1] == r:
                                 sf.supported_by.remove(pair)
+                        # retract sf
                         self.kb_retract(sf)
                     for sr in r.supports_rules:
+                        # handle sr's supported_by
                         for pair in sr.supported_by:
                             if pair[1] == r:
                                 sr.supported_by.remove(pair)
+                        # retract sr
                         self.kb_retract(sr)
+                # remove f in kb
                 self.rules.remove(r)
-
-
 
 class InferenceEngine(object):
     def fc_infer(self, fact, rule, kb):
@@ -202,6 +206,7 @@ class InferenceEngine(object):
         if binding_list.list_of_bindings:
             if len(rule_lhs) is 0:
                 support_by = [[fact, rule]]
+                # use the first binding , create a new fact
                 new_f = Fact(instantiate(rule.rhs, binding_list[0]), support_by)
                 kb.kb_add(new_f)
                 ind = kb.facts.index(new_f)
@@ -210,9 +215,12 @@ class InferenceEngine(object):
             else:
                 rule_lhs_statement = []
                 support_by = [[fact, rule]]
+                # use the first binding , create a new list of lhs
                 for rl in rule_lhs:
                     rule_lhs_statement.append(instantiate(rl, binding_list[0]))
+                # create a new rhs
                 new_rule_rhs = instantiate(rule.rhs, binding_list[0])
+                # create a new rule using lhs and rhs
                 new_r = Rule([rule_lhs_statement, new_rule_rhs], support_by)
                 kb.kb_add(new_r)
                 ind = kb.rules.index(new_r)
